@@ -24,6 +24,8 @@ export default function OrganizerFlow({ campaign, onChanged }) {
   const [picking, setPicking] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [undoOpen, setUndoOpen] = useState(false);
+  const [undoing, setUndoing] = useState(false);
 
   const loadIdeas = useCallback(async () => {
     const [list, status] = await Promise.all([api(`/api/campaigns/${campaign.id}/submissions`), api('/api/ai/status')]);
@@ -48,6 +50,21 @@ export default function OrganizerFlow({ campaign, onChanged }) {
       setChoice(null);
     } finally {
       setPicking(false);
+    }
+  }
+
+  async function undoWinner() {
+    setUndoing(true);
+    setError('');
+    try {
+      await api(`/api/campaigns/${campaign.id}/winner`, { method: 'DELETE' });
+      await Promise.all([onChanged(), loadIdeas()]);
+      document.getElementById('step-top10')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUndoing(false);
+      setUndoOpen(false);
     }
   }
 
@@ -82,8 +99,8 @@ export default function OrganizerFlow({ campaign, onChanged }) {
       <BrandStep campaign={campaign} onSaved={onChanged} />
       <MomentStep campaign={campaign} onSaved={onChanged} />
       <IdeasStep campaign={campaign} ideas={list} decided={decided} onIdeas={setIdeas} />
-      <Top10Step campaign={campaign} ideas={list} judge={judge} decided={decided} onIdeas={setIdeas} onPick={setChoice} />
-      <WinnerStep campaign={campaign} />
+      <Top10Step campaign={campaign} ideas={list} judge={judge} decided={decided} onIdeas={setIdeas} onPick={setChoice} onChanged={onChanged} />
+      <WinnerStep campaign={campaign} onUndo={() => setUndoOpen(true)} />
       <ImagesStep campaign={campaign} onChosen={onChanged} />
 
       <div className="danger-zone">
@@ -108,9 +125,20 @@ export default function OrganizerFlow({ campaign, onChanged }) {
             <p>
               <SourceTag author={choice.author} origin={choice.origin} />
             </p>
-            <p>This is final. Next you can make pictures for it.</p>
+            <p>You can undo this later.</p>
           </>
         ) : null}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={undoOpen}
+        title="Undo the winner?"
+        confirmLabel="Undo winner"
+        busy={undoing}
+        onConfirm={undoWinner}
+        onCancel={() => setUndoOpen(false)}
+      >
+        <p>Its pictures are removed too. Then pick again from the Top 10.</p>
       </ConfirmDialog>
 
       <ConfirmDialog

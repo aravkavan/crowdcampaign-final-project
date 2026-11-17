@@ -6,6 +6,7 @@ import MarketIntelBox from '../components/MarketIntelBox.jsx';
 import ShortText from '../components/ShortText.jsx';
 import { Alert, Button, EmptyState, Field, PageLoader, StatusBadge } from '../components/ui.jsx';
 import BrandCardView, { hasBrandCard } from '../features/brand/BrandCardView.jsx';
+import EditCampaign from '../features/edit/EditCampaign.jsx';
 import OrganizerFlow from '../features/flow/OrganizerFlow.jsx';
 import SourceTag from '../features/ideas/SourceTag.jsx';
 import MomentView, { hasMoment } from '../features/moment/MomentView.jsx';
@@ -86,9 +87,11 @@ export default function CampaignDetail() {
         </aside>
       </div>
 
-      {campaign.winner && !campaign.is_organizer ? <WinnerBanner winner={campaign.winner} campaign={campaign} /> : null}
+      {campaign.can_manage ? <EditCampaign key={campaign.id} campaign={campaign} onSaved={load} /> : null}
 
-      {campaign.is_organizer ? (
+      {campaign.winner && !campaign.can_manage ? <WinnerBanner winner={campaign.winner} campaign={campaign} /> : null}
+
+      {campaign.can_manage ? (
         <OrganizerFlow campaign={campaign} onChanged={load} />
       ) : (
         <ParticipantPanel campaign={campaign} onSubmitted={load} />

@@ -7,12 +7,12 @@ import { HttpError, bodyOf } from '../../lib/http.js';
 import { rankedSubmissions } from '../../services/submissions.js';
 import { organizerRoute } from '../shared/organizer.js';
 import { addAgentIdeas } from './generate.js';
-import { PERSONAS, agentProfile } from './personas.js';
+import { PERSONAS, agentDetails, agentProfile } from './personas.js';
 
 export const agentsRouter = Router();
 
 agentsRouter.get('/agents', requireAuth, (req, res) => {
-  res.json({ agents: PERSONAS.map(agentProfile) });
+  res.json({ agents: PERSONAS.map((p) => agentDetails(agentProfile(p))) });
 });
 
 organizerRoute(agentsRouter, 'post', '/campaigns/:id/agents', async (req, res, campaign) => {

@@ -6,6 +6,7 @@ import { AuthProvider } from './auth.jsx';
 import './styles.css';
 import './styles/flow.css';
 import './styles/simple.css';
+import './styles/more.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

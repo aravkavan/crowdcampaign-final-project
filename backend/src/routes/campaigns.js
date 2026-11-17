@@ -5,13 +5,15 @@ import { requireAuth } from '../auth/requireAuth.js';
 import { HttpError, bodyOf } from '../lib/http.js';
 import { isUuid, lengthProblem, text } from '../lib/validate.js';
 import { rankedSubmissions } from '../services/submissions.js';
+import { agentDetails } from '../features/agents/personas.js';
+import { isAdmin } from '../features/shared/admin.js';
 
 export const campaignsRouter = Router();
 
 // Status is worked out from the data instead of stored, so it can never go stale.
 //   open             accepting ideas
 //   judging          deadline passed, no winner yet
-//   winner_selected  the organizer picked a winner (final)
+//   winner_selected  the organizer picked a winner (can be undone)
 function campaignStatus(row, now = Date.now()) {
   if (row.has_winner) return 'winner_selected';
   if (new Date(row.deadline).getTime() <= now) return 'judging';
@@ -20,14 +22,19 @@ function campaignStatus(row, now = Date.now()) {
 
 // $1 is always the id of the person asking.
 const CAMPAIGN_COLUMNS = `
-  c.id, c.brand, c.title, c.brief, c.prize, c.deadline, c.created_at, c.brand_card, c.context,
+  c.id, c.brand, c.title, c.brief, c.prize, c.deadline, c.created_at, c.brand_card, c.context, c.score_factors,
   c.organizer_id, u.username AS organizer_username,
   (SELECT count(*)::int FROM submissions s WHERE s.campaign_id = c.id) AS submission_count,
   EXISTS (SELECT 1 FROM submissions s WHERE s.campaign_id = c.id AND s.is_winner) AS has_winner,
   EXISTS (SELECT 1 FROM submissions s WHERE s.campaign_id = c.id AND s.author_id = $1) AS has_submitted,
   EXISTS (SELECT 1 FROM submissions s WHERE s.campaign_id = c.id AND s.author_id = $1 AND s.is_winner) AS you_won`;
 
-function shapeCampaign(row, viewerId) {
+// `viewer` is the logged-in user (or just their id). Organizers manage their own campaigns;
+// the admin account (the grader) can manage every campaign.
+function shapeCampaign(row, viewer) {
+  const viewerId = typeof viewer === 'object' ? viewer?.id : viewer;
+  const owner = row.organizer_id === viewerId;
+  const admin = typeof viewer === 'object' && isAdmin(viewer);
   return {
     id: row.id,
     brand: row.brand,
@@ -38,28 +45,32 @@ function shapeCampaign(row, viewerId) {
     created_at: row.created_at,
     brand_card: row.brand_card ?? null,
     context: row.context ?? null,
+    score_factors: row.score_factors ?? [],
     organizer: { id: row.organizer_id, username: row.organizer_username },
     submission_count: row.submission_count,
     status: campaignStatus(row),
-    is_organizer: row.organizer_id === viewerId,
+    is_organizer: owner,
+    can_manage: owner || admin,
+    managed_as_admin: !owner && admin,
     has_submitted: row.has_submitted,
     you_won: row.you_won,
   };
 }
 
-// One campaign as seen by `viewerId`, or a 404.
-export async function loadCampaign(id, viewerId) {
+// One campaign as seen by `viewer`, or a 404.
+export async function loadCampaign(id, viewer) {
   if (!isUuid(id)) throw new HttpError(404, 'Campaign not found.');
+  const viewerId = typeof viewer === 'object' ? viewer?.id : viewer;
   const { rows } = await query(
     `SELECT ${CAMPAIGN_COLUMNS} FROM campaigns c JOIN users u ON u.id = c.organizer_id WHERE c.id = $2`,
     [viewerId, id],
   );
   if (!rows[0]) throw new HttpError(404, 'Campaign not found.');
-  return shapeCampaign(rows[0], viewerId);
+  return shapeCampaign(rows[0], viewer);
 }
 
 export function requireOrganizer(campaign) {
-  if (!campaign.is_organizer) throw new HttpError(403, 'Only this campaign’s organizer can do that.');
+  if (!campaign.can_manage) throw new HttpError(403, 'Only this campaign’s organizer can do that.');
 }
 
 function shapeIdea(row) {
@@ -74,15 +85,16 @@ function shapeIdea(row) {
     author: {
       id: row.author_id,
       username: row.author_username,
-      agent: agent ? { name: agent.name, age: agent.age, city: agent.city, country: agent.country, job: agent.job } : null,
+      agent: agentDetails(agent),
     },
   };
 }
 
 // The campaign plus the viewer's own idea and, once picked, the winning idea.
 // Nobody but the organizer sees the other ideas.
-async function campaignDetail(id, viewerId) {
-  const campaign = await loadCampaign(id, viewerId);
+export async function campaignDetail(id, viewer) {
+  const campaign = await loadCampaign(id, viewer);
+  const viewerId = typeof viewer === 'object' ? viewer?.id : viewer;
   const { rows } = await query(
     `SELECT s.id, s.title, s.content, s.is_winner, s.created_at, s.origin, s.author_id,
             u.username AS author_username, u.agent_profile
@@ -109,7 +121,7 @@ campaignsRouter.get('/', requireAuth, async (req, res) => {
       ORDER BY c.created_at DESC LIMIT 200`,
     [req.user.id],
   );
-  res.json({ campaigns: rows.map((row) => shapeCampaign(row, req.user.id)) });
+  res.json({ campaigns: rows.map((row) => shapeCampaign(row, req.user)) });
 });
 
 // POST /api/campaigns  { brand, title, brief, prize, deadline }  -> 201 campaign
@@ -140,17 +152,17 @@ campaignsRouter.post('/', requireAuth, async (req, res) => {
      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
     [req.user.id, brand, title, brief, prize, deadline.toISOString()],
   );
-  res.status(201).json(await campaignDetail(rows[0].id, req.user.id));
+  res.status(201).json(await campaignDetail(rows[0].id, req.user));
 });
 
 // GET /api/campaigns/:id -> campaign + my_submission + winner
 campaignsRouter.get('/:id', requireAuth, async (req, res) => {
-  res.json(await campaignDetail(req.params.id, req.user.id));
+  res.json(await campaignDetail(req.params.id, req.user));
 });
 
 // DELETE /api/campaigns/:id -> organizer only
 campaignsRouter.delete('/:id', requireAuth, async (req, res) => {
-  const campaign = await loadCampaign(req.params.id, req.user.id);
+  const campaign = await loadCampaign(req.params.id, req.user);
   requireOrganizer(campaign);
   await query('DELETE FROM campaigns WHERE id = $1', [campaign.id]);
   res.json({ deleted: true, id: campaign.id });
@@ -158,7 +170,7 @@ campaignsRouter.delete('/:id', requireAuth, async (req, res) => {
 
 // POST /api/campaigns/:id/submissions  { title, content } -> 201 idea
 campaignsRouter.post('/:id/submissions', requireAuth, async (req, res) => {
-  const campaign = await loadCampaign(req.params.id, req.user.id);
+  const campaign = await loadCampaign(req.params.id, req.user);
   if (campaign.is_organizer) throw new HttpError(403, 'Organizers can’t enter their own campaign.');
   if (campaign.status !== 'open') throw new HttpError(409, 'This campaign is no longer accepting ideas.');
 
@@ -184,16 +196,16 @@ campaignsRouter.post('/:id/submissions', requireAuth, async (req, res) => {
 
 // GET /api/campaigns/:id/submissions -> organizer only: every idea, ranked
 campaignsRouter.get('/:id/submissions', requireAuth, async (req, res) => {
-  const campaign = await loadCampaign(req.params.id, req.user.id);
+  const campaign = await loadCampaign(req.params.id, req.user);
   requireOrganizer(campaign);
   res.json({ campaign_id: campaign.id, submissions: await rankedSubmissions(campaign.id) });
 });
 
-// POST /api/campaigns/:id/winner  { submission_id } -> organizer only.
+// POST /api/campaigns/:id/winner  { submission_id } -> organizer (or admin) only. Undo: DELETE (features/edit).
 // This is the ONLY way a winner is ever set, and it requires a person's login.
 // The AI layer has no code path that touches is_winner.
 campaignsRouter.post('/:id/winner', requireAuth, async (req, res) => {
-  const campaign = await loadCampaign(req.params.id, req.user.id);
+  const campaign = await loadCampaign(req.params.id, req.user);
   requireOrganizer(campaign);
   if (campaign.status === 'winner_selected') throw new HttpError(409, 'A winner was already picked for this campaign.');
 
@@ -213,5 +225,5 @@ campaignsRouter.post('/:id/winner', requireAuth, async (req, res) => {
     throw err;
   }
   if (!updated) throw new HttpError(404, 'That idea isn’t part of this campaign.');
-  res.json(await campaignDetail(campaign.id, req.user.id));
+  res.json(await campaignDetail(campaign.id, req.user));
 });

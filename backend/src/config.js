@@ -64,6 +64,8 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL?.trim() ?? '',
   corsOrigins: list(process.env.CORS_ORIGINS, DEFAULT_ORIGINS),
   tokenTtlSeconds: positiveInt(process.env.TOKEN_TTL_SECONDS, 2 * 60 * 60),
+  // Accounts that can manage EVERY campaign (edit, undo, re-rank). Others manage only their own.
+  adminUsernames: list(process.env.ADMIN_USERNAMES, ['NYUgrader']).map((name) => name.toLowerCase()),
 
   // Resolved on first use, so scripts that never sign tokens (like the seed) skip it.
   get jwtSecret() {

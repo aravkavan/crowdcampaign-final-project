@@ -60,3 +60,16 @@ export function scoreOffline(campaign, idea) {
       `is ${length} words long and mentions ${channels} marketing channel${channels === 1 ? '' : 's'}.`,
   };
 }
+
+// Offline brand-factor scores: how much the idea talks about each factor's key words.
+export function scoreFactorsOffline(idea, factorNames) {
+  const ideaWords = words(`${idea.title} ${idea.content}`);
+  const ideaTerms = keyTerms(ideaWords);
+  const stems = new Set([...ideaTerms].map((w) => w.slice(0, 5)));
+  return factorNames.map((name) => {
+    const terms = [...keyTerms(words(name))];
+    const hits = terms.filter((w) => ideaTerms.has(w) || stems.has(w.slice(0, 5))).length;
+    const budget = /budget|cost|cheap|afford/i.test(name) && /[$€£]|\bcost|budget|\d{3,}/i.test(idea.content) ? 2 : 0;
+    return clamp(4 + 2 * hits + budget);
+  });
+}

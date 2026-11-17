@@ -1,6 +1,7 @@
 // Every idea for a campaign, best AI score first. Ideas without a score come last.
 // Ideas the safety check blocked are never ranked and never enter the Top 10.
 import { query } from '../db.js';
+import { agentDetails } from '../features/agents/personas.js';
 
 export const SHORTLIST_SIZE = 10;
 
@@ -10,7 +11,7 @@ function authorOf(row) {
     id: row.author_id,
     username: row.author_username,
     // Present only for AI agents: name, age, city, country, job.
-    agent: agent ? { name: agent.name, age: agent.age, city: agent.city, country: agent.country, job: agent.job } : null,
+    agent: agentDetails(agent),
   };
 }
 
@@ -19,7 +20,7 @@ export async function rankedSubmissions(campaignId) {
     `SELECT s.id, s.title, s.content, s.is_winner, s.created_at, s.origin,
             s.author_id, u.username AS author_username, u.agent_profile,
             e.creativity, e.relevance, e.feasibility, e.marketing_potential,
-            e.overall, e.summary, e.method, e.evaluated_at,
+            e.overall, e.summary, e.method, e.evaluated_at, e.factor_scores,
             c.status AS safety_status, c.reasons AS safety_reasons
        FROM submissions s
        JOIN users u ON u.id = s.author_id
@@ -53,6 +54,7 @@ export async function rankedSubmissions(campaignId) {
               relevance: row.relevance,
               feasibility: row.feasibility,
               marketing_potential: row.marketing_potential,
+              factors: row.factor_scores ?? [],
               overall: Math.round(row.overall * 100) / 100,
               summary: row.summary,
               method: row.method,

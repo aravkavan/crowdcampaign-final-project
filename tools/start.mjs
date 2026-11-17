@@ -6,7 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+// On Windows npm needs a shell. Passing one plain command string (instead of a list of
+// arguments) avoids Node's DEP0190 warning. The arguments are fixed, so this is safe.
+const isWindows = process.platform === 'win32';
+const npmCall = (fn, args, options) => (isWindows ? fn(`npm ${args.join(' ')}`, { ...options, shell: true }) : fn('npm', args, options));
 
 for (const folder of ['backend', 'frontend']) {
   if (!fs.existsSync(path.join(root, folder, 'node_modules'))) {
@@ -17,7 +20,7 @@ for (const folder of ['backend', 'frontend']) {
 
 const children = [];
 function start(label, folder, args) {
-  const child = spawn(npm, args, { cwd: path.join(root, folder), shell: process.platform === 'win32' });
+  const child = npmCall(spawn, args, { cwd: path.join(root, folder) });
   const prefix = (line) => (line ? `[${label}] ${line}` : line);
   for (const stream of [child.stdout, child.stderr]) {
     stream.on('data', (chunk) => process.stdout.write(chunk.toString().split('\n').map(prefix).join('\n')));

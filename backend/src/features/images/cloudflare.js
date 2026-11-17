@@ -24,7 +24,8 @@ export async function makeImage(prompt) {
     res = await fetch(`${apiUrl}/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`, {
       method: 'POST',
       headers: { authorization: `Bearer ${apiToken}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ prompt, steps: 4, seed: Math.floor(Math.random() * 1_000_000) }),
+      // FLUX.1 schnell on Workers AI accepts only `prompt` and `steps` (a `seed` gets a 400).
+      body: JSON.stringify({ prompt, steps: 4 }),
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {

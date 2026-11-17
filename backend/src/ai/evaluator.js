@@ -1,7 +1,7 @@
 // The AI layer's single entry point. The rest of the app only calls describeJudge()
 // and evaluateIdeas(); swapping providers never touches routes or the database.
 import { config } from '../config.js';
-import { scoreOffline } from './offline.js';
+import { scoreFactorsOffline, scoreOffline } from './offline.js';
 import { buildPrompt, parseScores, SYSTEM_PROMPT } from './prompt.js';
 import { askClaude } from './providers/anthropic.js';
 import { askGemini } from './providers/gemini.js';
@@ -23,9 +23,15 @@ export function describeJudge() {
   return { provider: 'offline', model: 'keyword heuristic', is_ai: false, label: `Offline estimate, not AI (${why})` };
 }
 
-function finalize(submissionId, scores, method) {
-  const overall = (scores.creativity + scores.relevance + scores.feasibility + scores.marketing_potential) / 4;
-  return { submission_id: submissionId, ...scores, overall: Math.round(overall * 100) / 100, method };
+// Overall = the average of the 4 base scores and every brand factor score.
+function finalize(submissionId, scores, method, factorNames = []) {
+  const factorScores = factorNames
+    .map((name, n) => ({ name, score: scores.factors?.[n] ?? null }))
+    .filter((f) => f.score !== null);
+  const all = [scores.creativity, scores.relevance, scores.feasibility, scores.marketing_potential, ...factorScores.map((f) => f.score)];
+  const overall = all.reduce((sum, n) => sum + n, 0) / all.length;
+  const { factors, ...base } = scores;
+  return { submission_id: submissionId, ...base, factor_scores: factorScores, overall: Math.round(overall * 100) / 100, method };
 }
 
 // One retry for brief hiccups (rate limit, overload, network blip). Timeouts are not
@@ -48,8 +54,12 @@ export async function evaluateIdeas(campaign, ideas) {
   const results = [];
   const failures = [];
 
+  const factorNames = campaign.score_factors ?? [];
   if (!judge.is_ai) {
-    for (const idea of ideas) results.push(finalize(idea.id, scoreOffline(campaign, idea), 'offline'));
+    for (const idea of ideas) {
+      const scores = { ...scoreOffline(campaign, idea), factors: scoreFactorsOffline(idea, factorNames) };
+      results.push(finalize(idea.id, scores, 'offline', factorNames));
+    }
     return { results, failures };
   }
 
@@ -67,10 +77,10 @@ export async function evaluateIdeas(campaign, ideas) {
     const ids = batch.map((_, n) => `idea-${n + 1}`);
     try {
       const reply = await withRetry(() => ask({ system: SYSTEM_PROMPT, prompt: buildPrompt(campaign, batch, ids) }));
-      const scores = parseScores(reply, ids);
+      const scores = parseScores(reply, ids, factorNames.length);
       batch.forEach((idea, n) => {
         const score = scores.get(ids[n]);
-        if (score) results.push(finalize(idea.id, score, method));
+        if (score) results.push(finalize(idea.id, score, method, factorNames));
         else failures.push({ submission_id: idea.id, error: 'the AI skipped this idea' });
       });
     } catch (err) {

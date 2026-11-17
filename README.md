@@ -367,7 +367,7 @@ Every route needs a login (no token or a bad token: **401**). Every route reads 
 
 ### Final project endpoints
 
-All need a login. "organizer" routes answer **404** for anyone else, like every other organizer route.
+All need a login. "organizer" means the campaign's organizer **or the grader account** (`ADMIN_USERNAMES`, default `NYUgrader`), which can manage every campaign. Anyone else gets **403**.
 
 | Method | Path | Who | Body | Success |
 | --- | --- | --- | --- | --- |
@@ -381,6 +381,16 @@ All need a login. "organizer" routes answer **404** for anyone else, like every 
 | POST | `/api/campaigns/:id/images/:imageId/choose` | organizer | | `200 {"images": [...]}` |
 | GET | `/api/images/:imageId` | anyone (long random id) | | the picture itself |
 | GET | `/api/features/status` | any user | | `200 {"images": {"real", "label"}}` |
+| PATCH | `/api/campaigns/:id` | organizer | `{"brand"?, "title"?, "brief"?, "prize"?, "deadline"?}` | `200 campaign` (edit details) |
+| DELETE | `/api/campaigns/:id/winner` | organizer | | `200 campaign` (undo the winner; its pictures are removed) |
+| DELETE | `/api/campaigns/:id/agents` | organizer, before a winner | | `200 {"removed", "submissions"}` (remove the AI ideas) |
+| POST | `/api/campaigns/:id/context/find` | organizer | | `200 {"context", "method", "kept"}` AI fills the moment; fields a person typed are never changed |
+| POST | `/api/campaigns/:id/factors/suggest` | organizer | | `200 {"score_factors", "method"}` up to 3 brand factors |
+| PUT | `/api/campaigns/:id/factors` | organizer | `{"factors": ["...", ...]}` (0 to 3) | `200 {"score_factors"}` |
+| POST | `/api/campaigns/:id/images/:imageId/keep` | organizer | `{"keep": true \| false}` | `200 {"images"}` kept pictures are never redone |
+| GET | `/api/images/:imageId?download=1` | anyone (long random id) | | the picture as a download |
+
+`POST /api/campaigns/:id/evaluate` with `{"force": true}` is the **Re-rank** button: it re-scores every safe idea on the 4 base scores plus the brand factors; the overall score is their average. `POST /api/campaigns/:id/images` makes 4 pictures the first time, then only replaces the ones not kept ("Redo the rest").
 
 ## Data model
 
@@ -407,7 +417,9 @@ campaigns.brand_card       JSON: stands for, values, history, personality, "neve
 campaigns.context          JSON: the moment card (place, audience, age group, product, moment, timing, culture)
 submissions.origin         'human' or 'agent'
 safety_checks              one row per idea: pass / warn / block, with the reasons
-idea_images                the winner's pictures (bytes stored in the database), style, prompt, chosen
+idea_images                the winner's pictures (bytes stored in the database), style, prompt, kept, chosen
+campaigns.score_factors    up to 3 brand factors; evaluations.factor_scores holds each idea's scores on them
+context.ai_fields          which moment fields the AI filled (people's fields are never changed by the AI)
 ```
 
 Uniqueness rules live in the database itself (case-insensitive unique indexes on username and email, one idea per person, one winner per campaign, one number per run per user, each development at most once in a run's top list), so they hold even when two requests race.

@@ -110,6 +110,8 @@ export const DEMO_CAMPAIGNS = [
       moment: 'A farewell match for a beloved football legend (pretend example, no date set)',
       timing: 'The week before, match night, and the day after',
       culture_notes: 'Catalan first, Spanish second. Warm and grateful, not salesy. No politics, no mocking rival fans.',
+      // Place and product are the brand's own facts (locked). The rest is what AI can reshuffle.
+      ai_fields: ['moment', 'audience', 'age_group', 'timing', 'culture_notes'],
     },
     ideas: [
       ['maya_makes', 'Thank-you wall at our kiosks', 'For the week before the match, each Taronja kiosk gets a big wall of orange sticky notes that say "Gràcies per..." (thanks for...). Fans finish the sentence with their favourite memory and stick it up, and everyone who writes one gets a free small juice. We post a photo of each wall every evening. It is all about the fans, with no names or logos, and it costs about €1,500 for walls, notes and juice.'],

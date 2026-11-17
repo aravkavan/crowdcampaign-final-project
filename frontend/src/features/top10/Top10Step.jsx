@@ -5,10 +5,11 @@ import { Alert, Button } from '../../components/ui.jsx';
 import { plural } from '../../lib/format.js';
 import Step from '../flow/Step.jsx';
 import SourceTag from '../ideas/SourceTag.jsx';
+import FactorsBar from './FactorsBar.jsx';
 import RankedIdea from './RankedIdea.jsx';
 import SafetyTag from './SafetyTag.jsx';
 
-export default function Top10Step({ campaign, ideas, judge, decided, onIdeas, onPick }) {
+export default function Top10Step({ campaign, ideas, judge, decided, onIdeas, onPick, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
@@ -17,14 +18,14 @@ export default function Top10Step({ campaign, ideas, judge, decided, onIdeas, on
   const blocked = ideas.filter((i) => i.safety?.status === 'block');
   const warned = ideas.filter((i) => i.safety?.status === 'warn');
   const checked = ideas.some((i) => i.safety);
-  const unscored = ideas.filter((i) => !i.evaluation && i.safety?.status !== 'block').length;
 
-  async function makeTop10() {
+  // force: re-score every idea (after new brand factors, or for a second opinion).
+  async function makeTop10(force = false) {
     setBusy(true);
     setError('');
     setNote('');
     try {
-      const result = await api(`/api/campaigns/${campaign.id}/evaluate`, { method: 'POST', body: {} });
+      const result = await api(`/api/campaigns/${campaign.id}/evaluate`, { method: 'POST', body: force ? { force: true } : {} });
       onIdeas(result.submissions);
       setNote(result.message);
     } catch (err) {
@@ -34,7 +35,7 @@ export default function Top10Step({ campaign, ideas, judge, decided, onIdeas, on
     }
   }
 
-  const label = top.length && !unscored ? 'Refresh Top 10' : 'Make Top 10';
+  const ranked = top.length > 0;
   return (
     <Step
       id="step-top10"
@@ -45,8 +46,8 @@ export default function Top10Step({ campaign, ideas, judge, decided, onIdeas, on
       locked={!ideas.length}
       action={
         !decided && ideas.length ? (
-          <Button onClick={makeTop10} loading={busy}>
-            {label}
+          <Button onClick={() => makeTop10(ranked)} loading={busy}>
+            {ranked ? 'Re-rank' : 'Make Top 10'}
           </Button>
         ) : null
       }
@@ -59,6 +60,8 @@ export default function Top10Step({ campaign, ideas, judge, decided, onIdeas, on
           Judge: <strong>{judge.label}</strong>
         </p>
       ) : null}
+
+      {ideas.length ? <FactorsBar campaign={campaign} onChanged={onChanged} disabled={decided} /> : null}
 
       {checked ? (
         <div className="counts">

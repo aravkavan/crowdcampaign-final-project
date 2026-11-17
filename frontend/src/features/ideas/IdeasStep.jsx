@@ -15,6 +15,22 @@ export default function IdeasStep({ campaign, ideas, decided, onIdeas }) {
   const fromAgents = ideas.filter((i) => i.author.agent).length;
   const fromPeople = ideas.length - fromAgents;
 
+  async function removeAgents() {
+    setBusy(true);
+    setError('');
+    setNote('');
+    try {
+      const result = await api(`/api/campaigns/${campaign.id}/agents`, { method: 'DELETE' });
+      onIdeas(result.submissions);
+      setNote(`Removed ${plural(result.removed, 'AI idea')}.`);
+      setLeft(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addAgents() {
     setBusy(true);
     setError('');
@@ -54,6 +70,11 @@ export default function IdeasStep({ campaign, ideas, decided, onIdeas }) {
       <div className="counts">
         <span className="count count-person">{plural(fromPeople, 'idea')} from people</span>
         <span className="count count-agent">{plural(fromAgents, 'idea')} from AI agents</span>
+        {fromAgents && !decided ? (
+          <button type="button" className="text-button" onClick={removeAgents} disabled={busy}>
+            Remove AI ideas
+          </button>
+        ) : null}
       </div>
 
       {ideas.length ? (

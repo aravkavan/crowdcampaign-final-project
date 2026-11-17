@@ -35,6 +35,9 @@ export default function RankedIdea({ idea, canPick, onPick }) {
               <ScoreBar label="Fits brand & moment" value={e.relevance} />
               <ScoreBar label="Doable" value={e.feasibility} />
               <ScoreBar label="Reach" value={e.marketing_potential} />
+              {(e.factors ?? []).map((f) => (
+                <ScoreBar key={f.name} label={f.name} value={f.score} />
+              ))}
             </div>
             <p className="entry-text">{idea.content}</p>
           </>

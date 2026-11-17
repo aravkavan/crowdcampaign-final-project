@@ -13,13 +13,17 @@ export function hasMoment(context) {
   return Boolean(context && MOMENT_FIELDS.some(([key]) => context[key]));
 }
 
-export default function MomentView({ context }) {
+export default function MomentView({ context, showSource = false }) {
   if (!hasMoment(context)) return null;
+  const ai = Array.isArray(context.ai_fields) ? context.ai_fields : [];
   return (
     <dl className="card-grid">
       {MOMENT_FIELDS.filter(([key]) => context[key]).map(([key, label]) => (
         <div key={key} className={`card-row ${key === 'moment' || key === 'culture_notes' ? 'card-row-wide' : ''}`}>
-          <dt>{label}</dt>
+          <dt>
+            {label}
+            {showSource && ai.includes(key) ? <span className="ai-field-tag">AI</span> : null}
+          </dt>
           <dd>{context[key]}</dd>
         </div>
       ))}

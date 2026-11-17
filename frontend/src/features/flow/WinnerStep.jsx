@@ -1,11 +1,20 @@
-// Step 5: the winner. Only a person can pick it (from the Top 10 above).
+// Step 5: the winner. Only a person can pick it (from the Top 10 above), and undo it.
+import { Button } from '../../components/ui.jsx';
 import Step from './Step.jsx';
 import SourceTag from '../ideas/SourceTag.jsx';
 
-export default function WinnerStep({ campaign }) {
+export default function WinnerStep({ campaign, onUndo }) {
   const winner = campaign.winner;
   return (
-    <Step id="step-winner" number={5} title="Winner" hint="You pick. The AI never does." done={Boolean(winner)} locked={!winner}>
+    <Step
+      id="step-winner"
+      number={5}
+      title="Winner"
+      hint="You pick. The AI never does."
+      done={Boolean(winner)}
+      locked={!winner}
+      action={winner ? <Button variant="secondary" onClick={onUndo}>Undo winner</Button> : null}
+    >
       {winner ? (
         <div className="winner-mini">
           <p className="winner-mini-title">

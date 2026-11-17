@@ -1,7 +1,7 @@
-// Pictures in the database: save a round, list the latest round, choose one, read one.
+// Pictures in the database: save a round, list kept + latest, keep, choose, read one.
 import { query, withTransaction } from '../../db.js';
 
-const LIST_COLUMNS = 'id, round, style, prompt, method, chosen, created_at';
+const LIST_COLUMNS = 'id, round, style, prompt, method, chosen, kept, created_at';
 
 export function shapeImage(row, labels = {}) {
   return {
@@ -13,6 +13,7 @@ export function shapeImage(row, labels = {}) {
     prompt: row.prompt,
     method: row.method,
     chosen: row.chosen,
+    kept: row.kept || row.chosen,
   };
 }
 
@@ -34,12 +35,12 @@ export async function saveImages(campaignId, submissionId, round, made) {
   return saved;
 }
 
-// The newest round, plus the chosen picture if it came from an older round.
+// Every picture still stored: the kept ones (any round) and the newest round.
+// (Older pictures that weren't kept are deleted when the next round is made.)
 export async function currentImages(campaignId) {
   const { rows } = await query(
     `SELECT ${LIST_COLUMNS} FROM idea_images
       WHERE campaign_id = $1
-        AND (chosen OR round = (SELECT max(round) FROM idea_images WHERE campaign_id = $1))
       ORDER BY round DESC, created_at ASC`,
     [campaignId],
   );
@@ -51,12 +52,34 @@ export async function chooseImage(campaignId, imageId) {
     const { rowCount } = await client.query('SELECT 1 FROM idea_images WHERE id = $1 AND campaign_id = $2', [imageId, campaignId]);
     if (!rowCount) return false;
     await client.query('UPDATE idea_images SET chosen = false WHERE campaign_id = $1 AND chosen', [campaignId]);
-    await client.query('UPDATE idea_images SET chosen = true WHERE id = $1', [imageId]);
+    await client.query('UPDATE idea_images SET chosen = true, kept = true WHERE id = $1', [imageId]);
     return true;
   });
 }
 
+// Styles to make next: the newest round's pictures that weren't kept. All 4 if every one was kept.
+export async function stylesToRedo(campaignId, allStyles) {
+  const { rows } = await query(
+    `SELECT style FROM idea_images
+      WHERE campaign_id = $1 AND NOT kept AND NOT chosen
+        AND round = (SELECT max(round) FROM idea_images WHERE campaign_id = $1)`,
+    [campaignId],
+  );
+  const wanted = new Set(rows.map((r) => r.style));
+  return wanted.size ? allStyles.filter((s) => wanted.has(s)) : allStyles;
+}
+
+// After a new round, older pictures that weren't kept are no longer needed.
+export async function dropUnkept(campaignId, beforeRound) {
+  await query('DELETE FROM idea_images WHERE campaign_id = $1 AND round < $2 AND NOT kept AND NOT chosen', [campaignId, beforeRound]);
+}
+
+export async function keepImage(campaignId, imageId, keep) {
+  const { rowCount } = await query('UPDATE idea_images SET kept = $3 WHERE id = $1 AND campaign_id = $2', [imageId, campaignId, keep]);
+  return rowCount > 0;
+}
+
 export async function readImage(imageId) {
-  const { rows } = await query('SELECT mime, data FROM idea_images WHERE id = $1', [imageId]);
+  const { rows } = await query('SELECT mime, data, style FROM idea_images WHERE id = $1', [imageId]);
   return rows[0] ?? null;
 }

@@ -1,4 +1,4 @@
-// Step 2: the moment (context card): where, who, when, what's happening.
+// Step 2: the moment (context card): where, who, when, what's happening. AI can find one.
 import { useState } from 'react';
 import { api } from '../../api.js';
 import { Alert, Button, Field } from '../../components/ui.jsx';
@@ -12,10 +12,28 @@ export default function MomentStep({ campaign, onSaved }) {
   const [form, setForm] = useState({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [finding, setFinding] = useState(false);
+  const [note, setNote] = useState('');
 
   function startEdit() {
     setForm(Object.fromEntries(MOMENT_FIELDS.map(([key]) => [key, context[key] ?? ''])));
     setEditing(true);
+  }
+
+  async function find() {
+    setFinding(true);
+    setError('');
+    setNote('');
+    try {
+      const result = await api(`/api/campaigns/${campaign.id}/context/find`, { method: 'POST', body: {} });
+      await onSaved();
+      const kept = result.kept?.length ? ' Your fields stayed as they were.' : '';
+      setNote((result.method === 'offline' ? 'Sample moment (no AI key).' : 'AI filled the fields marked AI.') + kept);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setFinding(false);
+    }
   }
 
   async function save(event) {
@@ -42,13 +60,19 @@ export default function MomentStep({ campaign, onSaved }) {
       done={done}
       action={
         !editing ? (
-          <Button variant={done ? 'ghost' : 'primary'} size="small" onClick={startEdit}>
-            {done ? 'Edit' : 'Add the moment'}
-          </Button>
+          <span className="step-buttons">
+            <Button size="small" variant={done ? 'secondary' : 'primary'} onClick={find} loading={finding}>
+              {done ? 'Try another' : 'Find with AI'}
+            </Button>
+            <Button variant="ghost" size="small" onClick={startEdit} disabled={finding}>
+              {done ? 'Edit' : 'Write it myself'}
+            </Button>
+          </span>
         ) : null
       }
     >
       <Alert tone="error">{error}</Alert>
+      {note && !editing ? <p className="muted small">{note}</p> : null}
       {editing ? (
         <form className="stack" onSubmit={save}>
           <div className="moment-form">
@@ -71,7 +95,7 @@ export default function MomentStep({ campaign, onSaved }) {
           </div>
         </form>
       ) : (
-        <MomentView context={context} />
+        <MomentView context={context} showSource />
       )}
     </Step>
   );

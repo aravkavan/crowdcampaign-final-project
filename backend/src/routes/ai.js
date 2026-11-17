@@ -16,8 +16,8 @@ async function saveScores(results) {
     for (const r of results) {
       await client.query(
         `INSERT INTO evaluations
-           (submission_id, creativity, relevance, feasibility, marketing_potential, overall, summary, method)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           (submission_id, creativity, relevance, feasibility, marketing_potential, overall, summary, method, factor_scores)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (submission_id) DO UPDATE SET
            creativity = EXCLUDED.creativity,
            relevance = EXCLUDED.relevance,
@@ -26,8 +26,9 @@ async function saveScores(results) {
            overall = EXCLUDED.overall,
            summary = EXCLUDED.summary,
            method = EXCLUDED.method,
+           factor_scores = EXCLUDED.factor_scores,
            evaluated_at = now()`,
-        [r.submission_id, r.creativity, r.relevance, r.feasibility, r.marketing_potential, r.overall, r.summary, r.method],
+        [r.submission_id, r.creativity, r.relevance, r.feasibility, r.marketing_potential, r.overall, r.summary, r.method, JSON.stringify(r.factor_scores ?? [])],
       );
     }
   });
@@ -38,8 +39,9 @@ aiRouter.get('/ai/status', requireAuth, (req, res) => {
   res.json(describeJudge());
 });
 
-// POST /api/campaigns/:id/evaluate  { force?: true } -> organizer only.
-// Scores ideas that have no score yet (or all of them with force: true).
+// POST /api/campaigns/:id/evaluate  { force?: true } -> organizer (or admin) only.
+// Scores ideas that have no score yet, or re-ranks all of them with force: true
+// (for example after changing the brand factors).
 campaignsAiRoute('post', '/campaigns/:id/evaluate', async (req, res, campaign) => {
   const force = bodyOf(req).force === true;
   // Step 1: the safety check (fast, no AI). Blocked ideas are never scored or ranked.
@@ -100,7 +102,7 @@ campaignsAiRoute('get', '/campaigns/:id/shortlist', async (req, res, campaign) =
 // Registers a route that needs a login AND the campaign's organizer.
 function campaignsAiRoute(method, path, handler) {
   aiRouter[method](path, requireAuth, async (req, res) => {
-    const campaign = await loadCampaign(req.params.id, req.user.id);
+    const campaign = await loadCampaign(req.params.id, req.user);
     requireOrganizer(campaign);
     return handler(req, res, campaign);
   });

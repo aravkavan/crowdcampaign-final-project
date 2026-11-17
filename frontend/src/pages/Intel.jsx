@@ -185,7 +185,9 @@ function IntelGroup({ title, items, empty, k }) {
   );
 }
 
+// One line per development; "More" opens the summary, the quoted sources and the history.
 function IntelItem({ item, k }) {
+  const [open, setOpen] = useState(false);
   const d = item.development;
   let meta = `First seen in run ${d.first_run}`;
   if (item.change === 'still' && item.previous_rank) meta += `. Was #${item.previous_rank} last run`;
@@ -200,11 +202,18 @@ function IntelItem({ item, k }) {
           {d.title}
           {item.change === 'new' ? <span className="tag-new">New</span> : null}
         </p>
-        <p className="intel-summary">{d.summary}</p>
-        {d.sources.map((s) => (
-          <SourceQuote key={s.url} source={s} />
-        ))}
-        <p className="intel-meta">{meta}.</p>
+        {open ? (
+          <>
+            <p className="intel-summary">{d.summary}</p>
+            {d.sources.map((s) => (
+              <SourceQuote key={s.url} source={s} />
+            ))}
+            <p className="intel-meta">{meta}.</p>
+          </>
+        ) : null}
+        <button type="button" className="text-button" aria-expanded={open} onClick={() => setOpen(!open)}>
+          {open ? 'Less' : `More (${d.sources.length} source${d.sources.length === 1 ? '' : 's'})`}
+        </button>
       </div>
     </li>
   );

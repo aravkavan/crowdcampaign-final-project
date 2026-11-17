@@ -7,6 +7,10 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS agent_profile JSONB;
 ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS brand_card JSONB;
 ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS context JSONB;
 
+-- Up to 3 things this brand cares about most (AI-suggested, editable). The judge scores them too.
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS score_factors JSONB;
+ALTER TABLE evaluations ADD COLUMN IF NOT EXISTS factor_scores JSONB;
+
 -- Where an idea came from: 'human', or 'agent:<method>' for AI agents.
 ALTER TABLE submissions ADD COLUMN IF NOT EXISTS origin TEXT NOT NULL DEFAULT 'human';
 
@@ -32,6 +36,8 @@ CREATE TABLE IF NOT EXISTS idea_images (
   chosen        BOOLEAN NOT NULL DEFAULT false,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- Pictures the organizer kept: never replaced by "Redo the rest".
+ALTER TABLE idea_images ADD COLUMN IF NOT EXISTS kept BOOLEAN NOT NULL DEFAULT false;
 CREATE INDEX IF NOT EXISTS idea_images_campaign_idx ON idea_images (campaign_id, round);
 CREATE UNIQUE INDEX IF NOT EXISTS idea_images_one_chosen ON idea_images (campaign_id) WHERE chosen;
 `;

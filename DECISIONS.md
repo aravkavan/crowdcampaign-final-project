@@ -87,3 +87,33 @@ One short line per step. Long briefs and AI summaries show one line, with a "Sho
 
 **What is the project called?**
 CrowdCampaign final project: folder and repo `crowdcampaign-final-project`. The tracker and the app are parts of it, not separate assignments.
+
+**Why did setup print a DEP0190 warning on Windows?**
+Node warns when a list of arguments is passed together with a shell. The setup and start scripts now pass one plain command on Windows. Harmless before, gone now.
+
+**First real picture run (Nov 17): Cloudflare said 400 "seed not allowed".**
+FLUX.1 schnell only takes `prompt` and `steps`. Removed `seed`. Pictures still differ on Redo because the AI writes new prompts each time.
+
+**Who can edit a campaign? (Nov 17)**
+Its organizer, and the grader account (`NYUgrader`) for every campaign. Nobody else. Set by `ADMIN_USERNAMES`.
+
+**Can a winner be changed?**
+Yes: "Undo winner", then pick again. Undoing removes that winner's pictures. Only a person can pick or undo; the AI still never can.
+
+**Can AI ideas be taken back?**
+Yes, "Remove AI ideas" (before a winner is picked). People's ideas are never removed.
+
+**How is the Top 10 scored for what the brand needs?**
+4 base scores + up to 3 brand factors (AI suggests them from the brand card; the organizer can edit). Overall = average of all. "Re-rank" re-scores everything.
+
+**Pictures: how do you keep the good ones?**
+Press "Keep" on any picture. "Redo the rest" only replaces the ones not kept, so kept pictures are never lost. Every picture has "Download".
+
+**Moment: can AI find it?**
+Yes, "Find with AI", and "Try another" to reshuffle. Fields a person typed are locked; the AI only fills empty fields and its own earlier ones (marked "AI").
+
+**Can you see who an AI agent is?**
+Yes: click the "AI agent" tag for its card (city, job, how it thinks, languages, interests). All 16 are made up.
+
+**Market intel: how much text?**
+One line per item; "More" opens the summary and source.

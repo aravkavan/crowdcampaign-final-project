@@ -1,0 +1,52 @@
+/* Nov 17: edit details, grader label, brand factors, agent card, kept pictures, intel "More". */
+
+/* Edit details + grader label */
+.edit-row { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin: 14px 0 4px; flex-wrap: wrap; }
+.admin-tag { font-size: 0.85rem; font-weight: 700; color: #5b21b6; background: #efe9ff; border-radius: 999px; padding: 4px 12px; }
+.edit-form { margin: 16px 0; }
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Brand factors */
+.factors { margin: 12px 0 14px; display: grid; gap: 10px; }
+.factors-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.factors-label { font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-right: 4px; }
+.factor-chip { font-size: 0.85rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--surface-sunk); border: 1px solid var(--line); color: var(--ink-soft); }
+.factor-brand { background: #efe9ff; border-color: #d6c8ff; color: #5b21b6; }
+.factors-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.factors-edit { display: grid; gap: 8px; max-width: 520px; }
+.factor-input { font: inherit; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
+
+/* AI agent tag opens a small card */
+.source-wrap { position: relative; display: inline-flex; }
+.source-button { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-align: left; }
+.source-button:hover .source-kind, .source-button[aria-expanded='true'] .source-kind { outline: 2px solid #c4b5fd; }
+.agent-card {
+  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; width: 290px;
+  display: grid; gap: 4px; padding: 12px 14px; background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 10px 30px rgba(23, 22, 59, 0.16);
+  font-size: 0.88rem; font-weight: 500; color: var(--ink-soft); line-height: 1.4;
+}
+.agent-card-head { display: flex; justify-content: space-between; align-items: center; color: var(--ink); font-size: 0.95rem; }
+.agent-card-close { background: none; border: 0; font-size: 1.2rem; line-height: 1; cursor: pointer; color: var(--muted); }
+.agent-card-line b { color: var(--ink); }
+.agent-card-note { margin-top: 4px; font-size: 0.8rem; color: var(--muted); }
+
+/* Pictures: kept row, actions */
+.image-group-title { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 14px 0 8px; }
+.image-kept { border-color: #a78bfa; }
+.image-tile figcaption { flex-wrap: wrap; }
+.image-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.image-actions a.btn { text-decoration: none; }
+
+/* Market intel: the open item shows its whole summary */
+.intel-open { display: block; -webkit-line-clamp: unset; }
+.intel-body .text-button, .intel-mini-item .text-button { margin-top: 2px; }
+
+/* Two buttons side by side in a step header */
+.step-buttons { display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* "AI" next to moment fields the AI filled (people's fields have no tag and are never changed) */
+.ai-field-tag { margin-left: 6px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; color: #5b21b6; background: #efe9ff; border-radius: 999px; padding: 1px 6px; vertical-align: 1px; }
+
+/* "See all ideas": one line per idea (full text is in the Top 10 under "Read the idea") */
+.idea-mini-text { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }

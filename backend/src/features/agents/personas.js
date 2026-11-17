@@ -23,7 +23,24 @@ export function agentUsername(persona) {
   return `agent.${persona.key}`;
 }
 
-// What the app shows about an agent, and what is stored on its account.
+// Everything the app shows about an agent (for the "who is this?" card), or null for people.
+export function agentDetails(profile) {
+  if (!profile) return null;
+  const persona = PERSONAS.find((p) => p.key === profile.key);
+  return {
+    key: profile.key ?? null,
+    name: profile.name,
+    age: profile.age,
+    city: profile.city,
+    country: profile.country,
+    job: profile.job,
+    voice: persona?.voice ?? null,
+    languages: persona?.languages ?? null,
+    interests: persona?.tags ?? [],
+  };
+}
+
+// What is stored on an agent's account.
 export function agentProfile(persona) {
   return {
     key: persona.key,

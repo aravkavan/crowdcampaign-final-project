@@ -33,35 +33,48 @@ export default function MarketIntelBox({ campaignId }) {
         From tracker run {intel.run.number}, {formatDate(intel.run.finished_at)}.
       </p>
       <ol className="intel-mini">
-        {intel.top.map((t) => {
-          const source = t.development.sources[0];
-          const href = source ? safeHref(source.url) : null;
-          return (
-            <li key={t.development.id} className="intel-mini-item">
-              <span className="intel-mini-rank">{t.rank}</span>
-              <div>
-                <p className="intel-mini-title">
-                  {t.development.title}
-                  {t.change === 'new' ? <span className="tag-new">New</span> : null}
-                </p>
-                <p className="intel-mini-summary">{t.development.summary}</p>
-                {source ? (
-                  <p className="intel-mini-source">
-                    {href ? (
-                      <a href={href} target="_blank" rel="noopener noreferrer">
-                        {hostOf(source.url)}
-                      </a>
-                    ) : (
-                      <span>{source.url}</span>
-                    )}
-                    {t.development.sources.length > 1 ? ` and ${t.development.sources.length - 1} more` : ''}
-                  </p>
-                ) : null}
-              </div>
-            </li>
-          );
-        })}
+        {intel.top.map((t) => (
+          <MiniItem key={t.development.id} t={t} />
+        ))}
       </ol>
     </section>
+  );
+}
+
+// One line per development; "More" opens the summary and the source.
+function MiniItem({ t }) {
+  const [open, setOpen] = useState(false);
+  const source = t.development.sources[0];
+  const href = source ? safeHref(source.url) : null;
+  return (
+    <li className="intel-mini-item">
+      <span className="intel-mini-rank">{t.rank}</span>
+      <div>
+        <p className="intel-mini-title">
+          {t.development.title}
+          {t.change === 'new' ? <span className="tag-new">New</span> : null}
+        </p>
+        {open ? (
+          <>
+            <p className="intel-mini-summary intel-open">{t.development.summary}</p>
+            {source ? (
+              <p className="intel-mini-source">
+                {href ? (
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {hostOf(source.url)}
+                  </a>
+                ) : (
+                  <span>{source.url}</span>
+                )}
+                {t.development.sources.length > 1 ? ` and ${t.development.sources.length - 1} more` : ''}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+        <button type="button" className="text-button" aria-expanded={open} onClick={() => setOpen(!open)}>
+          {open ? 'Less' : 'More'}
+        </button>
+      </div>
+    </li>
   );
 }
