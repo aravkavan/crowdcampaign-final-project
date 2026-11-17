@@ -1,0 +1,13 @@
+{
+  "name": "crowdcampaign",
+  "private": true,
+  "description": "Run the whole app with one command. See README.md.",
+  "scripts": {
+    "setup": "node tools/setup.mjs",
+    "start": "node tools/start.mjs",
+    "reset-demo": "cd backend && npm run reset-demo"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

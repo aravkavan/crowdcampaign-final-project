@@ -1,0 +1,72 @@
+{
+  "iteration": 3,
+  "step": "re-check without flagged dates",
+  "run_at": "2026-11-15T04:01:10-05:00",
+  "data_file": "upworthy-archive-exploratory-packages-03.12.2020.csv",
+  "flagged_window": [
+    "2013-06-25",
+    "2014-01-10"
+  ],
+  "versions_skipped": 4278,
+  "versions_total": 22666,
+  "settings": {
+    "max_ideas": 4,
+    "min_impressions": 1000,
+    "seed": 7
+  },
+  "all_tests": {
+    "stories_compared": 1874,
+    "one_idea_click_rate": 1.371,
+    "rows": [
+      {
+        "ideas": 2,
+        "label": "2 ideas",
+        "real": 10.8,
+        "low": 10.29,
+        "high": 11.33
+      },
+      {
+        "ideas": 3,
+        "label": "3 ideas",
+        "real": 16.79,
+        "low": 15.89,
+        "high": 17.73
+      },
+      {
+        "ideas": 4,
+        "label": "4 ideas",
+        "real": 20.87,
+        "low": 19.7,
+        "high": 22.11
+      }
+    ]
+  },
+  "without_flagged": {
+    "stories_compared": 1503,
+    "one_idea_click_rate": 1.141,
+    "rows": [
+      {
+        "ideas": 2,
+        "label": "2 ideas",
+        "real": 11.2,
+        "low": 10.59,
+        "high": 11.8
+      },
+      {
+        "ideas": 3,
+        "label": "3 ideas",
+        "real": 17.44,
+        "low": 16.44,
+        "high": 18.48
+      },
+      {
+        "ideas": 4,
+        "label": "4 ideas",
+        "real": 21.72,
+        "low": 20.42,
+        "high": 23.17
+      }
+    ]
+  },
+  "verdict": "holds"
+}

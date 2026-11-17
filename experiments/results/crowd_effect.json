@@ -1,0 +1,100 @@
+{
+  "iteration": 2,
+  "question": "Do more ideas give a better winner?",
+  "run_at": "2026-10-27T08:30:34-04:00",
+  "data_file": "upworthy-archive-exploratory-packages-03.12.2020.csv",
+  "settings": {
+    "max_ideas": 4,
+    "min_impressions": 1000,
+    "seed": 7,
+    "splits": 40,
+    "bootstrap_rounds": 1000,
+    "check_rounds": 3,
+    "check_splits": 10
+  },
+  "counts": {
+    "rows": 22666,
+    "tests": 4873,
+    "skipped_problem": 0,
+    "skipped_small": 41,
+    "skipped_bad": 0,
+    "stories": 2490,
+    "stories_compared": 1874
+  },
+  "one_idea_click_rate": 1.371,
+  "results": [
+    {
+      "ideas": 2,
+      "label": "2 ideas",
+      "best_click_rate": 1.519,
+      "real": 10.8,
+      "low": 10.29,
+      "high": 11.33,
+      "luck": 0.1,
+      "same_readers": 16.04
+    },
+    {
+      "ideas": 3,
+      "label": "3 ideas",
+      "best_click_rate": 1.602,
+      "real": 16.79,
+      "low": 15.89,
+      "high": 17.73,
+      "luck": -0.01,
+      "same_readers": 24.83
+    },
+    {
+      "ideas": 4,
+      "label": "4 ideas",
+      "best_click_rate": 1.658,
+      "real": 20.87,
+      "low": 19.7,
+      "high": 22.11,
+      "luck": -0.15,
+      "same_readers": 30.78
+    }
+  ],
+  "columns": {
+    "real": "gain vs 1 idea, winner scored on fresh readers (%)",
+    "low/high": "95% range of that gain",
+    "luck": "the same method when all ideas are equally good (%)",
+    "same_readers": "gain if the same readers pick and score, includes luck (%)"
+  },
+  "example_story": [
+    {
+      "headline": "This British Lady Was Starting To Scare Me Until I Heard What She Had To Say At 1:52",
+      "impressions": 5066,
+      "clicks": 20
+    },
+    {
+      "headline": "Destruction In 1 Scene, Kids Playing In Another... The Juxtaposition Is Big. So Is The Opportunity.",
+      "impressions": 5166,
+      "clicks": 18
+    },
+    {
+      "headline": "We Can Reduce Obesity And Heart Attacks, Have Nicer Cities, And Prevent Accidents. Let's Do It!",
+      "impressions": 5122,
+      "clicks": 12
+    },
+    {
+      "headline": "The First Half Was All Debbie Downer And Scary. The Second Half Gave Me Lots Of Hope.",
+      "impressions": 5099,
+      "clicks": 11
+    },
+    {
+      "headline": "What Do Polar Bears And Fewer Heart Attacks In Humans Have In Common?",
+      "impressions": 5190,
+      "clicks": 10
+    },
+    {
+      "headline": "This Is One Of Those Fork In The Road Moments. If We Make The Right Choice, We Live.",
+      "impressions": 5142,
+      "clicks": 4
+    },
+    {
+      "headline": "Fires, Destruction, Hunger... It's All Awful. But There's An Opportunity For A Better Outcome.",
+      "impressions": 5153,
+      "clicks": 1
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+/* Calm pages: long text shows as one line; buttons reveal the rest. */
+.clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.brief-excerpt,
+.intel-mini-summary {
+  -webkit-line-clamp: 1;
+}
+.entry-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.entry-open .entry-summary {
+  display: block;
+}
+.short-text .text-button {
+  margin-top: 4px;
+}
